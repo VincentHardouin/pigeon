@@ -76,6 +76,11 @@ final class Store: ObservableObject {
         save()
     }
 
+    func remove(_ document: String) {
+        entries[document] = nil
+        save()
+    }
+
     private func save() {
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? JSONEncoder().encode(entries).write(to: url, options: .atomic)

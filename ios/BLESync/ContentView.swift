@@ -23,7 +23,12 @@ struct ContentView: View {
                         ContentUnavailableView("Aucune lecture reçue", systemImage: "books.vertical",
                                                description: Text("Les progressions envoyées par la liseuse apparaîtront ici."))
                     }
-                    ForEach(store.sorted) { BookRow(entry: $0) }
+                    ForEach(store.sorted) { entry in
+                        BookRow(entry: entry)
+                            .swipeActions {
+                                Button("Supprimer", systemImage: "trash", role: .destructive) { store.remove(entry.document) }
+                            }
+                    }
                 }
             }
             .navigationTitle("BLESync")
