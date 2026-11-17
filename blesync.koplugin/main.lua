@@ -107,10 +107,11 @@ function BLESync:captureProgress()
     G_reader_settings:saveSetting(QUEUE_KEY, queue)
 end
 
--- Reads status.txt ("OK"/"FAIL", then one "OK <document> <captured_at>" per delivery) and returns the status.
+-- Reads status ("OK"/"FAIL", then one "OK <document> <captured_at>" per delivery) and returns the status.
 -- Drops entries the script delivered, unless they were captured again since.
 function BLESync:applyResults()
-    local path = self.path .. "/status.txt"
+    -- No .txt extension: the PocketBook library would list the file as a book.
+    local path = self.path .. "/status"
     local f = io.open(path, "r")
     if not f then return end
     local status = f:read("*l")

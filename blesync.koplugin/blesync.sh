@@ -1,12 +1,12 @@
 #!/bin/sh
-# Sends every line of outbox.jsonl to the iOS app over BLE, then writes status.txt:
+# Sends every line of outbox.jsonl to the iOS app over BLE, then writes status:
 # "OK" or "FAIL", followed by one "OK <document> <captured_at>" line per delivered entry.
 # Usage: blesync.sh <plugin dir>
 DIR=$1
 OUTBOX=$DIR/outbox.jsonl
 LOG=$DIR/sync.log
 LAST_ADDR_FILE=$DIR/last_addr
-STATUS=$DIR/status.txt
+STATUS=$DIR/status
 SERVICE=947694fe-0425-4e30-84bc-fb783e781ead
 CHAR=1fd42b59-27a4-49f9-b36b-c1d0f9c445b2
 LOCK=/tmp/blesync.pid
@@ -15,7 +15,7 @@ LOCK=/tmp/blesync.pid
 if [ -f $LOCK ] && kill -0 "$(cat $LOCK)" 2>/dev/null; then exit 0; fi
 echo $$ > $LOCK
 trap 'rm -f $LOCK' EXIT
-# The plugin may rewrite the outbox mid-run: work on a snapshot so status.txt only lists what was really sent.
+# The plugin may rewrite the outbox mid-run: work on a snapshot so status only lists what was really sent.
 cp "$OUTBOX" /tmp/blesync-outbox.jsonl
 OUTBOX=/tmp/blesync-outbox.jsonl
 
