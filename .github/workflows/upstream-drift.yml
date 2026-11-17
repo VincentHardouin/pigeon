@@ -1,0 +1,45 @@
+name: CWA upstream drift
+
+# The plugin and the app mirror CWA's KOReader sync (document digest, payload, kosync API) without sharing its code.
+# This flags upstream changes to those files so they get reviewed before they silently break progress matching.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare with pinned versions
+        id: drift
+        run: |
+          if .github/scripts/upstream-check.sh > drift.md; then exit 0; fi
+          echo "drift=true" >> "$GITHUB_OUTPUT"
+      - name: Open an issue
+        if: steps.drift.outputs.drift == 'true'
+        run: |
+          title="CWA KOReader sync changed upstream"
+          if [ -n "$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
+            echo "Issue already open."
+            exit 0
+          fi
+          {
+            echo "These upstream files changed since they were last reviewed:"
+            echo
+            cat drift.md
+            echo
+            echo "Check that the document digest, the payload fields and the kosync API still match what"
+            echo "\`blesync.koplugin\` and the iOS app do, then pin the new versions:"
+            echo
+            echo '```sh'
+            echo '.github/scripts/upstream-check.sh --update'
+            echo '```'
+          } > body.md
+          gh issue create --title "$title" --body-file body.md

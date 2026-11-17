@@ -1,0 +1,4 @@
+a5b695976afa28dd1faeaa7c61fb491c44dbde4b koreader/plugins/cwasync.koplugin/main.lua
+b6d02124c736eb4a3811e0e26cc442fa5bc79410 koreader/plugins/cwasync.koplugin/api.json
+3ca86c74bced3c67dbb10ba10d306434543819c3 cps/progress_syncing/protocols/kosync.py
+246b3e2136b1ef0e224150e3548c61dc1f69e77e cps/progress_syncing/checksums/koreader.py
