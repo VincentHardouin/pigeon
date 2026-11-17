@@ -1,9 +1,9 @@
 #!/bin/sh
-# Sends every line of outbox.jsonl to the iOS app over BLE, then writes "OK <document> <captured_at>" lines to result.txt.
+# Sends every line of outbox.jsonl to the iOS app over BLE, then writes status.txt:
+# "OK" or "FAIL", followed by one "OK <document> <captured_at>" line per delivered entry.
 # Usage: blesync.sh <plugin dir>
 DIR=$1
 OUTBOX=$DIR/outbox.jsonl
-RESULT=$DIR/result.txt
 LOG=$DIR/sync.log
 LAST_ADDR_FILE=$DIR/last_addr
 STATUS=$DIR/status.txt
@@ -15,7 +15,7 @@ LOCK=/tmp/blesync.pid
 if [ -f $LOCK ] && kill -0 "$(cat $LOCK)" 2>/dev/null; then exit 0; fi
 echo $$ > $LOCK
 trap 'rm -f $LOCK' EXIT
-# The plugin may rewrite the outbox mid-run: work on a snapshot so result.txt only lists what was really sent.
+# The plugin may rewrite the outbox mid-run: work on a snapshot so status.txt only lists what was really sent.
 cp "$OUTBOX" /tmp/blesync-outbox.jsonl
 OUTBOX=/tmp/blesync-outbox.jsonl
 
@@ -56,9 +56,9 @@ for a in $CANDIDATES; do
     log "essai $a"
     if send_to "$a"; then
         echo "$a" > "$LAST_ADDR_FILE"
-        sed 's/.*"document":"\([^"]*\)".*"captured_at":\([0-9]*\).*/OK \1 \2/' "$OUTBOX" > "$RESULT"
-        log "OK $(grep -c . "$RESULT") envoi(s) vers $a"
-        echo OK > "$STATUS"
+        log "OK $(grep -c . "$OUTBOX") envoi(s) vers $a"
+        # Written then renamed: the plugin polls this file and must never read it half-written.
+        { echo OK; sed 's/.*"document":"\([^"]*\)".*"captured_at":\([0-9]*\).*/OK \1 \2/' "$OUTBOX"; } > "$STATUS.tmp" && mv "$STATUS.tmp" "$STATUS"
         bt_restore
         exit 0
     fi

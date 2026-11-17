@@ -8,7 +8,7 @@ xcuserdata/
 
 # Runtime files the plugin writes on the e-reader
 blesync.koplugin/outbox.jsonl
-blesync.koplugin/result.txt
+blesync.koplugin/status.txt.tmp
 blesync.koplugin/status.txt
 blesync.koplugin/sync.log
 blesync.koplugin/last_addr

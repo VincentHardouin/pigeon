@@ -55,19 +55,14 @@ end
 -- blesync.sh runs detached: poll for the status it writes when done.
 -- Automatic syncs only report failures, so reading isn't interrupted every N pages.
 function BLESync:watchSync()
-    local path = self.path .. "/status.txt"
-    local f = io.open(path, "r")
-    if not f then
+    local status = self:applyResults()
+    if not status then
         self.watch_tries = self.watch_tries + 1
         if self.watch_tries < 36 then
             UIManager:scheduleIn(5, self.watch_task)
         end
         return
     end
-    local status = f:read("*l")
-    f:close()
-    os.remove(path)
-    self:applyResults()
     if status == "OK" then
         if self.watch_notify then
             UIManager:show(InfoMessage:new{ text = "Synchronisé à " .. os.date("%H:%M"), timeout = 3 })
@@ -112,11 +107,13 @@ function BLESync:captureProgress()
     G_reader_settings:saveSetting(QUEUE_KEY, queue)
 end
 
+-- Reads status.txt ("OK"/"FAIL", then one "OK <document> <captured_at>" per delivery) and returns the status.
 -- Drops entries the script delivered, unless they were captured again since.
 function BLESync:applyResults()
-    local path = self.path .. "/result.txt"
+    local path = self.path .. "/status.txt"
     local f = io.open(path, "r")
     if not f then return end
+    local status = f:read("*l")
     local queue = G_reader_settings:readSetting(QUEUE_KEY, {})
     for line in f:lines() do
         local doc, captured_at = line:match("^OK (%S+) (%d+)")
@@ -127,6 +124,7 @@ function BLESync:applyResults()
     f:close()
     os.remove(path)
     G_reader_settings:saveSetting(QUEUE_KEY, queue)
+    return status
 end
 
 function BLESync:sync(notify_success)
@@ -144,7 +142,6 @@ function BLESync:sync(notify_success)
     local f = io.open(self.path .. "/outbox.jsonl", "w")
     f:write(table.concat(lines, "\n"), "\n")
     f:close()
-    os.remove(self.path .. "/status.txt")
     os.execute(string.format("sh %q %q >/dev/null 2>&1 &", self.path .. "/blesync.sh", self.path))
     UIManager:unschedule(self.watch_task)
     -- A manual sync keeps its success message even if an automatic one fires meanwhile.
