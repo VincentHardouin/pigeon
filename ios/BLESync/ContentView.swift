@@ -138,7 +138,7 @@ private struct BookCover: View {
 
     // "Le Comte…" and "L'Étranger" should not both show "L".
     private var initial: String {
-        let stripped = title.replacing(/^(?i)(l['’]|(le|la|les|the|a|an|un|une) )/, with: "")
+        let stripped = title.replacing(#/^(?i)(l['’]|(le|la|les|the|a|an|un|une) )/#, with: "")
         return String((stripped.first ?? "?")).uppercased()
     }
 

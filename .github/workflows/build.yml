@@ -1,0 +1,58 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check syntax
+        run: |
+          sudo apt-get install -y --no-install-recommends luajit
+          for f in blesync.koplugin/*.lua; do luajit -bl "$f" > /dev/null; done
+          sh -n blesync.koplugin/blesync.sh
+      - name: Package
+        run: zip -r blesync.koplugin.zip blesync.koplugin -x '*.DS_Store'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin
+          path: blesync.koplugin.zip
+
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      # Unsigned: a free Apple account can't sign in CI. AltStore or Sideloadly re-sign it on install.
+      - name: Build unsigned IPA
+        run: |
+          xcodebuild -project ios/BLESync.xcodeproj -scheme BLESync -configuration Release \
+            -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/BLESync.app Payload/
+          zip -r BLESync-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: BLESync-unsigned.ipa
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [plugin, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" blesync.koplugin.zip BLESync-unsigned.ipa \
+            --repo "$GITHUB_REPOSITORY" --generate-notes
