@@ -32,8 +32,15 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
         case .unauthorized: "Bluetooth non autorisé"
         default: "Bluetooth indisponible"
         }
+        #if targetEnvironment(simulator)
+        // ponytail: the simulator has no Bluetooth; pretend it is ready so screenshots show the real layout.
+        state = "Bluetooth prêt"
+        isReady = true
+        return
+        #else
         isReady = m.state == .poweredOn
         guard isReady else { return }
+        #endif
         if serviceAdded {
             startAdvertising()
             return
