@@ -21,11 +21,11 @@ The e-reader is the BLE central because its kernel cannot advertise (see [docs/h
 
 `cwasync` already syncs to CWA over Wi-Fi, but only while the e-reader has Wi-Fi: either left on while reading, or turned on by hand (and an iPhone hotspot enabled by hand when away from home). This project removes both:
 
-- **No radio on while reading.** Bluetooth is switched on for about 15 s per sync, then fully off (`netagent bt off` stops the chip). Wi-Fi stays off.
+- **No radio on while reading.** Bluetooth is switched on for about 30 s per sync, then fully off (`netagent bt off` stops the chip). Wi-Fi stays off.
 - **Works anywhere the iPhone is.** The phone brings the Internet connection; no hotspot to enable.
 - **Offline-safe.** Progress waits on the e-reader until the iPhone acknowledges it, then on the iPhone until CWA is reachable.
 
-The battery gain over Wi-Fi left on is not measured yet; the protocol and results live in [docs/battery.md](docs/battery.md).
+Measured on the e-reader, Wi-Fi left on costs about 16 mAh per hour of reading; BLE sync costs about 0.5 mAh per hour at 3 syncs an hour, about 30 times less ([docs/battery.md](docs/battery.md)).
 
 ## Install
 
@@ -45,7 +45,7 @@ Read as usual. The plugin syncs:
 - when you close a book and when the e-reader wakes up;
 - on demand with **BLE sync › Sync now**, or a gesture bound to **BLE sync: sync now**.
 
-A sync takes about 15 s. Manual syncs show *Synchronisé à HH:MM*; any sync that cannot reach the iPhone shows *iPhone introuvable* and keeps the progress for the next attempt.
+A sync takes about 30 s. Manual syncs show *Synchronisé à HH:MM*; any sync that cannot reach the iPhone shows *iPhone introuvable* and keeps the progress for the next attempt.
 
 **Leave the app in the background.** iOS relaunches it when the e-reader writes, even after it has been suspended, but never after a force-quit from the app switcher.
 
@@ -81,7 +81,7 @@ No encryption: the kernel cannot resolve the iPhone's rotating address, so a bon
 | `ios/` | SwiftUI app; `ios/cwa-check/run.sh` checks the CWA upload logic against a fake server |
 | `poc/` | Shell test from the hardware exploration |
 | `docs/hardware.md` | What the PocketBook can and cannot do over Bluetooth |
-| `tools/power-log.sh` | Battery logger for the measurements in `docs/battery.md` |
+| `tools/power-test.sh` | Battery test behind `docs/battery.md` |
 
 CI builds the plugin zip and an unsigned IPA on every push. Pushing a `v*` tag publishes both as a release.
 

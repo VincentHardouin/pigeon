@@ -1,48 +1,33 @@
 # Battery: BLE sync vs Wi-Fi left on
 
-**Status: not measured yet.** This page holds the protocol; results go in the table below.
-
-## Question
-
-Is syncing over BLE (Bluetooth on for about 15 s per sync, then off) cheaper than leaving Wi-Fi on while reading so `cwasync` can sync directly?
-
-## Protocol
-
-1. Copy `tools/power-log.sh` to the e-reader (for example `/mnt/ext1/applications/`).
-2. Same conditions for every run: frontlight off, same book, same page, no page turns (e-ink refreshes would dominate), KOReader auto-sleep disabled so the screen stays awake.
-3. Run each scenario for 30 minutes, each with its own label. Start the logger over SSH with `nohup`, then set the radios from KOReader:
-
-   ```sh
-   nohup sh /mnt/ext1/applications/power-log.sh baseline 30 > /dev/null 2>&1 &
-   ```
-
-   | Label | Wi-Fi | Bluetooth |
-   |---|---|---|
-   | `baseline` | off | off |
-   | `wifi` | on, connected | off |
-   | `bluetooth` | off | on, idle (`/ebrmain/bin/netagent bt on`) |
-   | `sync` | off | **Sync now** once a minute |
-
-4. Copy `power.log` back and summarise each scenario:
-
-   ```sh
-   awk -F, '{ n[$2]++; i[$2]+=$5; if (!($2 in t0)) { t0[$2]=$1; c0[$2]=$3 } t1[$2]=$1; c1[$2]=$3 }
-     END { for (l in n) printf "%-10s avg current %6.1f mA, %4.1f %%/h\n", l, i[l]/n[l]/1000,
-           (c0[l]-c1[l]) * 3600 / (t1[l]-t0[l]) }' power.log
-   ```
-
-If the driver does not expose `current_now`, only the capacity drop is available. It moves in 1 % steps, so run each scenario for at least 2 hours instead.
-
-## Reading the results
-
-- Cost of Wi-Fi left on: `wifi − baseline`, all the time the book is open.
-- Cost of BLE sync: the `sync` run does one sync a minute, so the cost for N syncs an hour is `(sync − baseline) × N / 60`. At one page a minute and a sync every 20 pages, N is 3.
+Is syncing over BLE (Bluetooth on for a few seconds per sync, then off) cheaper than leaving Wi-Fi on while reading so `cwasync` can sync directly?
 
 ## Results
 
-| Scenario | Avg current | Battery per hour |
+PocketBook Verse Pro, 18 November 2026, screen awake on one page, frontlight off, no page turns.
+
+| State | Avg current | Over baseline |
 |---|---|---|
-| `baseline` | | |
-| `wifi` | | |
-| `bluetooth` | | |
-| `sync` | | |
+| `baseline`: Wi-Fi and Bluetooth off | 82.2 mA | |
+| `wifi`: Wi-Fi on, connected, idle | 98.1 mA | +15.9 mA |
+| `bluetooth`: Bluetooth on, idle | 85.2 mA | +3.0 mA |
+| `sync`: one BLE sync, Bluetooth on to off | 101.1 mA for 31 s | +18.9 mA for 31 s ≈ 0.16 mAh |
+
+- **Wi-Fi left on costs about 16 mAh per hour of reading**, about 19 % more than the baseline draw.
+- **BLE sync costs about 0.5 mAh per hour** at 3 syncs an hour (one page a minute, a sync every 20 pages): about 30 times less, under 1 % of the baseline draw.
+
+`current_now` is the fuel gauge's smoothed reading and only changes about every 20 s, so these are orders of magnitude, not precise figures. They come from a single run of each state.
+
+## Reproduce
+
+1. On the e-reader: KOReader auto-sleep off (nothing runs while it sleeps), frontlight off, a book open, Wi-Fi and KOReader's SSH server on.
+2. Copy and start the test detached. It takes about 4 minutes; it turns Wi-Fi off for the middle part, then back on.
+
+   ```sh
+   ssh -p 2221 reader@<e-reader> 'cat > /mnt/ext1/applications/power-test.sh' < tools/power-test.sh
+   ssh -p 2221 reader@<e-reader> 'nohup sh /mnt/ext1/applications/power-test.sh > /dev/null 2>&1 < /dev/null &'
+   ```
+
+3. Once Wi-Fi is back, read `/mnt/ext1/applications/power.log.summary`. `power.log` holds one sample a second: `state,epoch,current_now (µA, negative while discharging)`.
+
+The `sync` state sends a copy of the plugin's outbox, so the iPhone app must be in the background nearby; the plugin's own queue is left alone.
