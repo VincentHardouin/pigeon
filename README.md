@@ -2,6 +2,12 @@
 
 Syncs KOReader reading progress from a PocketBook to [Calibre-Web Automated](https://github.com/crocodilestick/Calibre-Web-Automated) (CWA) **without Wi-Fi on the e-reader**: the progress goes over Bluetooth Low Energy to an iPhone app, which pushes it to CWA whenever it has Internet.
 
+<p align="center">
+  <img src="docs/screenshots/home-light.png" width="250" alt="BLESync app: reception status, CWA status and the books received">
+  <img src="docs/screenshots/home-dark.png" width="250" alt="Same screen in dark mode">
+  <img src="docs/screenshots/settings.png" width="250" alt="Calibre-Web settings: server URL, username and password">
+</p>
+
 ```text
 PocketBook (KOReader)              iPhone (BLESync app)              Server
 blesync.koplugin                   GATT service                      CWA
@@ -10,6 +16,16 @@ blesync.koplugin                   GATT service                      CWA
 ```
 
 The e-reader is the BLE central because its kernel cannot advertise (see [docs/hardware.md](docs/hardware.md)). The iPhone app exposes the service and keeps it alive in the background.
+
+## Why Bluetooth rather than Wi-Fi
+
+`cwasync` already syncs to CWA over Wi-Fi, but only while the e-reader has Wi-Fi: either left on while reading, or turned on by hand (and an iPhone hotspot enabled by hand when away from home). This project removes both:
+
+- **No radio on while reading.** Bluetooth is switched on for about 15 s per sync, then fully off (`netagent bt off` stops the chip). Wi-Fi stays off.
+- **Works anywhere the iPhone is.** The phone brings the Internet connection; no hotspot to enable.
+- **Offline-safe.** Progress waits on the e-reader until the iPhone acknowledges it, then on the iPhone until CWA is reachable.
+
+The battery gain over Wi-Fi left on is not measured yet; the protocol and results live in [docs/battery.md](docs/battery.md).
 
 ## Install
 
@@ -65,6 +81,7 @@ No encryption: the kernel cannot resolve the iPhone's rotating address, so a bon
 | `ios/` | SwiftUI app; `ios/cwa-check/run.sh` checks the CWA upload logic against a fake server |
 | `poc/` | Shell test from the hardware exploration |
 | `docs/hardware.md` | What the PocketBook can and cannot do over Bluetooth |
+| `tools/power-log.sh` | Battery logger for the measurements in `docs/battery.md` |
 
 CI builds the plugin zip and an unsigned IPA on every push. Pushing a `v*` tag publishes both as a release.
 
