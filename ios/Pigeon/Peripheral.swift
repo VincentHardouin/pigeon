@@ -17,7 +17,7 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
         super.init()
         // Restoration lets iOS relaunch the app in the background when the PocketBook writes.
         manager = CBPeripheralManager(delegate: self, queue: nil,
-                                      options: [CBPeripheralManagerOptionRestoreIdentifierKey: "blesync-peripheral"])
+                                      options: [CBPeripheralManagerOptionRestoreIdentifierKey: "pigeon-peripheral"])
     }
 
     func peripheralManager(_ m: CBPeripheralManager, willRestoreState dict: [String: Any]) {
@@ -61,7 +61,7 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
     private func startAdvertising() {
         guard !manager.isAdvertising else { return }
         manager.startAdvertising([CBAdvertisementDataServiceUUIDsKey: [Self.serviceUUID],
-                                  CBAdvertisementDataLocalNameKey: "BLESync"])
+                                  CBAdvertisementDataLocalNameKey: "Pigeon"])
     }
 
     func peripheralManager(_ m: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
@@ -71,7 +71,7 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
             .reduce(into: Data()) { $0.append($1.value ?? Data()) }
         guard let first = requests.first else { return }
         guard let payload = try? JSONDecoder().decode(Payload.self, from: data) else {
-            // An error makes blesync.sh keep the entry and retry later.
+            // An error makes pigeon.sh keep the entry and retry later.
             m.respond(to: first, withResult: .unlikelyError)
             return
         }

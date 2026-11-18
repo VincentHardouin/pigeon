@@ -36,7 +36,7 @@ jobs:
             cat drift.md
             echo
             echo "Check that the document digest, the payload fields and the kosync API still match what"
-            echo "\`blesync.koplugin\` and the iOS app do, then pin the new versions:"
+            echo "\`pigeon.koplugin\` and the iOS app do, then pin the new versions:"
             echo
             echo '```sh'
             echo '.github/scripts/upstream-check.sh --update'

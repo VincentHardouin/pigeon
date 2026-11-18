@@ -50,7 +50,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 #endif
 
 @main
-struct BLESyncApp: App {
+struct PigeonApp: App {
     #if canImport(UIKit)
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     #endif

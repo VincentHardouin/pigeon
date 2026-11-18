@@ -10,8 +10,8 @@ local logger = require("logger")
 local util = require("util")
 local _ = require("gettext")
 
-local QUEUE_KEY = "blesync_queue"
-local PAGES_KEY = "blesync_sync_every_pages"
+local QUEUE_KEY = "pigeon_queue"
+local PAGES_KEY = "pigeon_sync_every_pages"
 
 -- An ATT value is capped at 512 bytes: book metadata is cut so the payload stays under it.
 local function clip(s, n)
@@ -19,12 +19,12 @@ local function clip(s, n)
     return (s:sub(1, n):gsub("[\192-\255][\128-\191]*$", ""))
 end
 
-local BLESync = WidgetContainer:extend{
-    name = "blesync",
+local Pigeon = WidgetContainer:extend{
+    name = "pigeon",
     is_doc_only = true,
 }
 
-function BLESync:init()
+function Pigeon:init()
     -- Same id as kosync/cwasync, so CWA sees one device whichever path the progress takes.
     self.device_id = G_reader_settings:readSetting("device_id")
     self.pages_since_sync = 0
@@ -34,15 +34,15 @@ function BLESync:init()
 end
 
 -- Makes "Sync now" assignable to a gesture, like kosync's push/pull.
-function BLESync:onDispatcherRegisterActions()
-    Dispatcher:registerAction("blesync_sync_now", { category = "none", event = "BLESyncNow", title = _("BLE sync: sync now"), reader = true })
+function Pigeon:onDispatcherRegisterActions()
+    Dispatcher:registerAction("pigeon_sync_now", { category = "none", event = "PigeonSyncNow", title = _("Pigeon: sync now"), reader = true })
 end
 
-function BLESync:syncEveryPages()
+function Pigeon:syncEveryPages()
     return G_reader_settings:readSetting(PAGES_KEY, 20)
 end
 
-function BLESync:onBLESyncNow()
+function Pigeon:onPigeonSyncNow()
     self:captureProgress()
     if self:sync(true) then
         UIManager:show(InfoMessage:new{ text = _("Sync started (about 1 min)."), timeout = 3 })
@@ -52,9 +52,9 @@ function BLESync:onBLESyncNow()
     return true
 end
 
--- blesync.sh runs detached: poll for the status it writes when done.
+-- pigeon.sh runs detached: poll for the status it writes when done.
 -- Automatic syncs only report failures, so reading isn't interrupted every N pages.
-function BLESync:watchSync()
+function Pigeon:watchSync()
     local status = self:applyResults()
     if not status then
         self.watch_tries = self.watch_tries + 1
@@ -73,7 +73,7 @@ function BLESync:watchSync()
 end
 
 -- Same digest as cwasync, otherwise CWA would not match the book.
-function BLESync:getDocumentDigest()
+function Pigeon:getDocumentDigest()
     local digest = self.ui.doc_settings:readSetting("partial_md5_checksum")
     if digest and digest ~= "" then
         return digest
@@ -84,10 +84,10 @@ function BLESync:getDocumentDigest()
     end
 end
 
-function BLESync:captureProgress()
+function Pigeon:captureProgress()
     local digest = self:getDocumentDigest()
     if not digest then
-        logger.warn("BLESync: no digest for", self.ui.document.file)
+        logger.warn("Pigeon: no digest for", self.ui.document.file)
         return
     end
     local reader = self.ui.document.info.has_pages and self.ui.paging or self.ui.rolling
@@ -109,7 +109,7 @@ end
 
 -- Reads status ("OK"/"FAIL", then one "OK <document> <captured_at>" per delivery) and returns the status.
 -- Drops entries the script delivered, unless they were captured again since.
-function BLESync:applyResults()
+function Pigeon:applyResults()
     -- No .txt extension: the PocketBook library would list the file as a book.
     local path = self.path .. "/status"
     local f = io.open(path, "r")
@@ -128,12 +128,12 @@ function BLESync:applyResults()
     return status
 end
 
-function BLESync:sync(notify_success)
+function Pigeon:sync(notify_success)
     self.pages_since_sync = 0
     self:applyResults()
     local lines = {}
     for _digest, e in pairs(G_reader_settings:readSetting(QUEUE_KEY, {})) do
-        -- Fixed key order: blesync.sh appends sent_at and parses document/captured_at with sed.
+        -- Fixed key order: pigeon.sh appends sent_at and parses document/captured_at with sed.
         table.insert(lines, string.format('{"v":1,"document":%s,"progress":%s,"percentage":%s,"device":%s,"device_id":%s,"title":%s,"author":%s,"captured_at":%d}',
             Json.encode(e.document), Json.encode(e.progress), tostring(e.percentage),
             Json.encode(e.device), Json.encode(e.device_id or ""), Json.encode(e.title or ""), Json.encode(e.author or ""), e.captured_at))
@@ -143,7 +143,7 @@ function BLESync:sync(notify_success)
     local f = io.open(self.path .. "/outbox.jsonl", "w")
     f:write(table.concat(lines, "\n"), "\n")
     f:close()
-    os.execute(string.format("sh %q %q >/dev/null 2>&1 &", self.path .. "/blesync.sh", self.path))
+    os.execute(string.format("sh %q %q >/dev/null 2>&1 &", self.path .. "/pigeon.sh", self.path))
     UIManager:unschedule(self.watch_task)
     -- A manual sync keeps its success message even if an automatic one fires meanwhile.
     self.watch_notify = notify_success or (self.watch_tries ~= nil and self.watch_tries < 36 and self.watch_notify)
@@ -152,7 +152,7 @@ function BLESync:sync(notify_success)
     return true
 end
 
-function BLESync:onPageUpdate()
+function Pigeon:onPageUpdate()
     self:captureProgress()
     self.pages_since_sync = self.pages_since_sync + 1
     local every = self:syncEveryPages()
@@ -162,28 +162,28 @@ function BLESync:onPageUpdate()
     end
 end
 
-function BLESync:onCloseDocument()
+function Pigeon:onCloseDocument()
     self:captureProgress()
     self:sync()
 end
 
 -- Nothing survives sleep on this device: only make sure the queue is on disk.
-function BLESync:onSuspend()
+function Pigeon:onSuspend()
     self:captureProgress()
     G_reader_settings:flush()
 end
 
-function BLESync:onResume()
+function Pigeon:onResume()
     UIManager:scheduleIn(5, function() self:sync() end)
 end
 
-function BLESync:addToMainMenu(menu_items)
-    menu_items.blesync = {
-        text = _("BLE sync"),
+function Pigeon:addToMainMenu(menu_items)
+    menu_items.pigeon = {
+        text = _("Pigeon"),
         sub_item_table = {
             {
                 text = _("Sync now"),
-                callback = function() self:onBLESyncNow() end,
+                callback = function() self:onPigeonSyncNow() end,
             },
             {
                 text_func = function()
@@ -231,4 +231,4 @@ function BLESync:addToMainMenu(menu_items)
     }
 end
 
-return BLESync
+return Pigeon

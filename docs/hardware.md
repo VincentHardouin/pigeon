@@ -30,5 +30,5 @@ Tested on real hardware in November 2026. These results shaped the design; there
 
 - The e-reader must be the central and **find the iPhone by scanning on every sync**: its address changes about every 15 minutes.
 - iOS uses a separate random address per advertising set, so the "Apple" address seen in a scan may not be the app's.
-- In the foreground the app advertises the name `BLESync`, which `bluetoothctl` shows. In the background iOS drops the name and hides the service UUID in its overflow area (Apple manufacturer data `0x004C`). The sender then tries the last working address, then Apple devices ranked by how often they were seen, and keeps the first one exposing the service.
+- In the foreground the app advertises the name `Pigeon`, which `bluetoothctl` shows. In the background iOS drops the name and hides the service UUID in its overflow area (Apple manufacturer data `0x004C`). The sender then tries the last working address, then Apple devices ranked by how often they were seen, and keeps the first one exposing the service.
 - Pairing brings nothing: without address resolution a bond is never reused.

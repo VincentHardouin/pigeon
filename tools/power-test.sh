@@ -4,7 +4,7 @@
 # The screen must stay awake (KOReader auto-sleep off): nothing runs while the e-reader sleeps.
 # Usage: power-test.sh [seconds per state]   Results: power.log next to this script, summary at the end.
 S=${1:-60}
-P=/mnt/ext1/applications/koreader/plugins/blesync.koplugin
+P=/mnt/ext1/applications/koreader/plugins/pigeon.koplugin
 NET=/ebrmain/bin/netagent
 OUT=$(dirname "$0")/power.log
 for d in /sys/class/power_supply/*; do [ "$(cat "$d/type")" = Battery ] && B=$d; done
@@ -22,7 +22,7 @@ measure bluetooth "$S"
 $NET bt off; sleep 10
 # A copy of the outbox, so the plugin's own queue and status file are left alone.
 mkdir -p /tmp/bs && cp "$P/outbox.jsonl" "$P/last_addr" /tmp/bs/ 2>/dev/null
-sh "$P/blesync.sh" /tmp/bs & pid=$!
+sh "$P/pigeon.sh" /tmp/bs & pid=$!
 while kill -0 $pid 2>/dev/null; do sample sync; done
 $NET net on
 
