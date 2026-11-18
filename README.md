@@ -2,6 +2,8 @@
 
 Syncs KOReader reading progress from a PocketBook to [Calibre-Web Automated](https://github.com/crocodilestick/Calibre-Web-Automated) (CWA) **without Wi-Fi on the e-reader**: the progress goes over Bluetooth Low Energy to an iPhone app, which pushes it to CWA whenever it has Internet.
 
+**About 30 times less battery than leaving Wi-Fi on to sync**: Wi-Fi left on adds 19 % to the e-reader's draw while reading; BLE sync adds under 1 % ([measured](docs/battery.md)).
+
 <p align="center">
   <img src="docs/screenshots/home-light.png" width="250" alt="BLESync app: reception status, CWA status and the books received">
   <img src="docs/screenshots/home-dark.png" width="250" alt="Same screen in dark mode">
@@ -21,11 +23,16 @@ The e-reader is the BLE central because its kernel cannot advertise (see [docs/h
 
 `cwasync` already syncs to CWA over Wi-Fi, but only while the e-reader has Wi-Fi: either left on while reading, or turned on by hand (and an iPhone hotspot enabled by hand when away from home). This project removes both:
 
-- **No radio on while reading.** Bluetooth is switched on for about 30 s per sync, then fully off (`netagent bt off` stops the chip). Wi-Fi stays off.
+- **Battery.** Measured on a PocketBook Verse Pro, then scaled to an hour of reading at one page a minute:
+
+  | | Extra draw | Per hour of reading |
+  |---|---|---|
+  | Wi-Fi left on (`cwasync`) | +16 mA, all the time | ≈ 16 mAh, +19 % |
+  | BLE sync, every 20 pages | +19 mA for 30 s per sync | ≈ 0.5 mAh, under +1 % |
+
+  No radio stays on: Bluetooth is switched on for about 30 s per sync, then fully off (`netagent bt off` stops the chip), and Wi-Fi stays off. Figures are orders of magnitude from one run; method in [docs/battery.md](docs/battery.md).
 - **Works anywhere the iPhone is.** The phone brings the Internet connection; no hotspot to enable.
 - **Offline-safe.** Progress waits on the e-reader until the iPhone acknowledges it, then on the iPhone until CWA is reachable.
-
-Measured on the e-reader, Wi-Fi left on costs about 16 mAh per hour of reading; BLE sync costs about 0.5 mAh per hour at 3 syncs an hour, about 30 times less ([docs/battery.md](docs/battery.md)).
 
 ## Install
 
