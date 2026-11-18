@@ -12,11 +12,22 @@ Syncs KOReader reading progress from a PocketBook to [Calibre-Web Automated](htt
   <img src="docs/screenshots/settings.png" width="250" alt="Calibre-Web settings: server URL, username and password">
 </p>
 
-```text
-PocketBook (KOReader)              iPhone (Pigeon app)               Server
-pigeon.koplugin                    GATT service                      CWA
-  queues progress    ── BLE ──▶      stores progress     ── HTTPS ──▶  /kosync
-  scans, connects, writes            GET, then PUT if newer
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryTextColor": "#063F3F", "lineColor": "#0A6E6E", "clusterBkg": "#D3ECE9", "clusterBorder": "#5FA8A3", "titleColor": "#063F3F", "edgeLabelBackground": "#D3ECE9"}}}%%
+flowchart LR
+    subgraph reader["PocketBook · KOReader"]
+        plugin["<b>pigeon.koplugin</b><br/>queues progress<br/>scans, connects, writes"]
+    end
+    subgraph phone["iPhone · Pigeon app"]
+        gatt["<b>GATT service</b><br/>stores progress"]
+    end
+    subgraph server["Server · CWA"]
+        kosync["<b>/kosync</b>"]
+    end
+    plugin -- "BLE" --> gatt
+    gatt -- "HTTPS: GET, then PUT if newer" --> kosync
+    classDef step fill:#0A6E6E,stroke:#063F3F,color:#FFFFFF
+    class plugin,gatt,kosync step
 ```
 
 The e-reader is the BLE central because its kernel cannot advertise (see [docs/hardware.md](docs/hardware.md)). The iPhone app exposes the service and keeps it alive in the background.
