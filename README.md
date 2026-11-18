@@ -5,14 +5,14 @@ Syncs KOReader reading progress from a PocketBook to [Calibre-Web Automated](htt
 **About 30 times less battery than leaving Wi-Fi on to sync**: Wi-Fi left on adds 19 % to the e-reader's draw while reading; BLE sync adds under 1 % ([measured](docs/battery.md)).
 
 <p align="center">
-  <img src="docs/screenshots/home-light.png" width="250" alt="BLESync app: reception status, CWA status and the books received">
+  <img src="docs/screenshots/home-light.png" width="250" alt="Pigeon app: reception status, CWA status and the books received">
   <img src="docs/screenshots/home-dark.png" width="250" alt="Same screen in dark mode">
   <img src="docs/screenshots/settings.png" width="250" alt="Calibre-Web settings: server URL, username and password">
 </p>
 
 ```text
-PocketBook (KOReader)              iPhone (BLESync app)              Server
-blesync.koplugin                   GATT service                      CWA
+PocketBook (KOReader)              iPhone (Pigeon app)               Server
+pigeon.koplugin                    GATT service                      CWA
   queues progress    ── BLE ──▶      stores progress     ── HTTPS ──▶  /kosync
   scans, connects, writes            GET, then PUT if newer
 ```
@@ -38,9 +38,9 @@ The e-reader is the BLE central because its kernel cannot advertise (see [docs/h
 
 Download both files from the [latest release](../../releases/latest).
 
-**KOReader plugin.** Unzip `blesync.koplugin.zip` into `koreader/plugins/` on the e-reader, then restart KOReader.
+**KOReader plugin.** Unzip `pigeon.koplugin.zip` into `koreader/plugins/` on the e-reader, then restart KOReader.
 
-**iOS app.** `BLESync-unsigned.ipa` is unsigned: install it with [AltStore](https://altstore.io) or Sideloadly, which sign it with your Apple account. With a free account the signature lasts 7 days; AltStore renews it automatically. You can also build from Xcode (`ios/BLESync.xcodeproj`).
+**iOS app.** `Pigeon-unsigned.ipa` is unsigned: install it with [AltStore](https://altstore.io) or Sideloadly, which sign it with your Apple account. With a free account the signature lasts 7 days; AltStore renews it automatically. You can also build from Xcode (`ios/Pigeon.xcodeproj`).
 
 Open the app once, tap the gear and enter your CWA URL, username and password. The password stays in the iOS Keychain and never goes over Bluetooth.
 
@@ -48,9 +48,9 @@ Open the app once, tap the gear and enter your CWA URL, username and password. T
 
 Read as usual. The plugin syncs:
 
-- every N pages (default 20, set in **BLE sync › Sync every N pages**, 0 to disable);
+- every N pages (default 20, set in **Pigeon › Sync every N pages**, 0 to disable);
 - when you close a book and when the e-reader wakes up;
-- on demand with **BLE sync › Sync now**, or a gesture bound to **BLE sync: sync now**.
+- on demand with **Pigeon › Sync now**, or a gesture bound to **Pigeon: sync now**.
 
 A sync takes about 30 s. Manual syncs show *Synchronisé à HH:MM*; any sync that cannot reach the iPhone shows *iPhone introuvable* and keeps the progress for the next attempt.
 
@@ -84,7 +84,7 @@ No encryption: the kernel cannot resolve the iPhone's rotating address, so a bon
 
 | Path | What |
 |---|---|
-| `blesync.koplugin/` | KOReader plugin (`main.lua`) and the BLE sender it runs in the background (`blesync.sh`, `gatttool`) |
+| `pigeon.koplugin/` | KOReader plugin (`main.lua`) and the BLE sender it runs in the background (`pigeon.sh`, `gatttool`) |
 | `ios/` | SwiftUI app; `ios/cwa-check/run.sh` checks the CWA upload logic against a fake server |
 | `poc/` | Shell test from the hardware exploration |
 | `docs/hardware.md` | What the PocketBook can and cannot do over Bluetooth |

@@ -6,5 +6,5 @@ cd "$(dirname "$0")"
 python3 fake_cwa.py & SERVER=$!
 trap 'kill $SERVER; rm -f "$HOME/Library/Application Support/progress.json" cwatest' EXIT
 sleep 1
-swiftc -swift-version 5 -target arm64-apple-macosx14.0 ../BLESync/Store.swift ../BLESync/CWA.swift main.swift -o cwatest
+swiftc -swift-version 5 -target arm64-apple-macosx14.0 ../Pigeon/Store.swift ../Pigeon/CWA.swift main.swift -o cwatest
 ./cwatest

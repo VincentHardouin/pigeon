@@ -31,7 +31,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("BLESync")
+            .navigationTitle("Pigeon")
             .refreshable { upload() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
