@@ -1,4 +1,6 @@
-# calibre-sync
+<p align="center"><img src="docs/logo.svg" width="160" alt="Pigeon logo: a teal pigeon on a bookmark"></p>
+
+# Pigeon
 
 Syncs KOReader reading progress from a PocketBook to [Calibre-Web Automated](https://github.com/crocodilestick/Calibre-Web-Automated) (CWA) **without Wi-Fi on the e-reader**: the progress goes over Bluetooth Low Energy to an iPhone app, which pushes it to CWA whenever it has Internet.
 
