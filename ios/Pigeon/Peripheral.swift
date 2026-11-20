@@ -39,12 +39,17 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
         return
         #else
         isReady = m.state == .poweredOn
-        guard isReady else { return }
+        guard isReady else {
+            // iOS clears the GATT database when Bluetooth leaves poweredOn (airplane mode, toggle, reset).
+            serviceAdded = false
+            return
+        }
         #endif
         if serviceAdded {
             startAdvertising()
             return
         }
+        m.removeAllServices()
         // ponytail: no encryption, the kernel can't resolve the iPhone's rotating address so a bond would never be reused.
         let progress = CBMutableCharacteristic(type: Self.progressUUID, properties: [.write], value: nil, permissions: [.writeable])
         let service = CBMutableService(type: Self.serviceUUID, primary: true)
