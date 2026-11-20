@@ -99,7 +99,6 @@ No encryption: the kernel cannot resolve the iPhone's rotating address, so a bon
 |---|---|
 | `pigeon.koplugin/` | KOReader plugin (`main.lua`) and the BLE sender it runs in the background (`pigeon.sh`, `gatttool`) |
 | `ios/` | SwiftUI app; `ios/cwa-check/run.sh` checks the CWA upload logic against a fake server |
-| `poc/` | Shell test from the hardware exploration |
 | `docs/hardware.md` | What the PocketBook can and cannot do over Bluetooth |
 | `tools/power-test.sh` | Battery test behind `docs/battery.md` |
 
