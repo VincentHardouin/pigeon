@@ -109,5 +109,5 @@ A weekly job compares the CWA files this project mirrors (`cwasync.koplugin`, `p
 ## Known limits
 
 - Force-quitting the iOS app stops syncing until it is reopened (iOS rule).
-- In a place with many Apple devices, the iPhone may fall outside the 5 candidates the e-reader tries.
+- In a place with many Apple devices, the iPhone may fall outside the 8 candidates the e-reader tries. Devices advertising an app in the background come first, but other iPhones and iPads running such an app count too.
 - Progress only flows from the e-reader to CWA; pulling progress read elsewhere is not implemented.
