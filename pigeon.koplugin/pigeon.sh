@@ -7,6 +7,7 @@ OUTBOX=$DIR/outbox.jsonl
 LOG=$DIR/sync.log
 LAST_ADDR_FILE=$DIR/last_addr
 STATUS=$DIR/status
+HISTORY=$DIR/history.log
 SERVICE=947694fe-0425-4e30-84bc-fb783e781ead
 CHAR=1fd42b59-27a4-49f9-b36b-c1d0f9c445b2
 LOCK=/tmp/pigeon.pid
@@ -14,7 +15,8 @@ LOCK=/tmp/pigeon.pid
 [ -s "$OUTBOX" ] || exit 0
 if [ -f $LOCK ] && kill -0 "$(cat $LOCK)" 2>/dev/null; then exit 0; fi
 echo $$ > $LOCK
-trap 'rm -f $LOCK' EXIT
+# sync.log only holds the last run: keep the previous ones to diagnose a failure after the fact.
+trap 'cat "$LOG" >> "$HISTORY"; tail -n 300 "$HISTORY" > "$HISTORY.tmp" && mv "$HISTORY.tmp" "$HISTORY"; rm -f $LOCK' EXIT
 # The plugin may rewrite the outbox mid-run: work on a snapshot so status only lists what was really sent.
 cp "$OUTBOX" /tmp/pigeon-outbox.jsonl
 OUTBOX=/tmp/pigeon-outbox.jsonl
