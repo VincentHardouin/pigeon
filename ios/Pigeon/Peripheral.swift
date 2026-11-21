@@ -8,6 +8,8 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
 
     @Published var state = "…"
     @Published var isReady = false
+    /// Any write from the PocketBook, even rejected: tells a BLE failure apart from a CWA one.
+    @Published private(set) var lastWrite = UserDefaults.standard.object(forKey: "lastWrite") as? Date
 
     var onPayload: (@MainActor (Payload) -> Void)?
     private var manager: CBPeripheralManager!
@@ -39,12 +41,17 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
         return
         #else
         isReady = m.state == .poweredOn
-        guard isReady else { return }
+        guard isReady else {
+            // iOS clears the GATT database when Bluetooth leaves poweredOn (airplane mode, toggle, reset).
+            serviceAdded = false
+            return
+        }
         #endif
         if serviceAdded {
             startAdvertising()
             return
         }
+        m.removeAllServices()
         // ponytail: no encryption, the kernel can't resolve the iPhone's rotating address so a bond would never be reused.
         let progress = CBMutableCharacteristic(type: Self.progressUUID, properties: [.write], value: nil, permissions: [.writeable])
         let service = CBMutableService(type: Self.serviceUUID, primary: true)
@@ -70,6 +77,8 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
             .sorted { $0.offset < $1.offset }
             .reduce(into: Data()) { $0.append($1.value ?? Data()) }
         guard let first = requests.first else { return }
+        lastWrite = Date()
+        UserDefaults.standard.set(lastWrite, forKey: "lastWrite")
         guard let payload = try? JSONDecoder().decode(Payload.self, from: data) else {
             // An error makes pigeon.sh keep the entry and retry later.
             m.respond(to: first, withResult: .unlikelyError)

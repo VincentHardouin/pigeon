@@ -45,12 +45,11 @@ struct ContentView: View {
     }
 
     private var readerRow: some View {
-        let last = store.sorted.map(\.receivedAt).max()
-        return StatusRow(
+        StatusRow(
             icon: "antenna.radiowaves.left.and.right",
             color: peripheral.isReady ? .green : .red,
             title: peripheral.isReady ? "Prête à recevoir" : peripheral.state,
-            detail: last.map { "Dernière réception \($0.formatted(.relative(presentation: .named)))" }
+            detail: peripheral.lastWrite.map { "Dernier contact \($0.formatted(.relative(presentation: .named)))" }
                 ?? "En attente de la liseuse")
     }
 
