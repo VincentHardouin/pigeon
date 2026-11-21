@@ -39,12 +39,14 @@ APP=$(grep -E "Device $ADDR_RE Pigeon" /tmp/pigeon-scan.log | grep -oE "$ADDR_RE
 LAST=$(cat "$LAST_ADDR_FILE" 2>/dev/null)
 grep -q "$LAST" /tmp/pigeon-scan.log 2>/dev/null || LAST=
 APPLE=$(grep -i 'ManufacturerData Key: 0x004c' /tmp/pigeon-scan.log | grep -oE "$ADDR_RE" | sort -u)
-# ponytail: any overflow area counts; matching our service's bit in its bitmap would also skip other apps' iPhones and iPads.
+# iOS sets one bit of a 128-bit bitmap per service a backgrounded app advertises: ours is 0x20 in the 10th byte of the value,
+# observed on hardware. Each bluetoothctl line starts with a prompt redrawn after a \r: keep what follows it.
 OVERFLOW=$(awk '
+    { sub(/.*\r/, "") }
     match($0, /([0-9A-F]{2}:){5}[0-9A-F]{2}/) { addr = substr($0, RSTART, RLENGTH) }
     /ManufacturerData Key:/ { apple = /0x004c/; want = 0; next }
-    /ManufacturerData Value:/ { want = apple; sub(/.*Value:/, "") }
-    want && NF { b = $1; sub(/^0x/, "", b); if (b == "01") print addr; want = 0 }
+    /ManufacturerData Value:/ { want = apple; next }
+    want { if ($1 == "01" && index("2367abef", substr($10, 1, 1))) print addr; want = 0 }
 ' /tmp/pigeon-scan.log | sort -u)
 RANKED=$(for a in $APPLE; do echo "$(grep -c "$a" /tmp/pigeon-scan.log) $a"; done | sort -rn | cut -d' ' -f2)
 # ponytail: capped so a crowded place costs at most 8 connection attempts.
