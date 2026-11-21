@@ -40,9 +40,10 @@ LAST=$(cat "$LAST_ADDR_FILE" 2>/dev/null)
 grep -q "$LAST" /tmp/pigeon-scan.log 2>/dev/null || LAST=
 APPLE=$(grep -i 'ManufacturerData Key: 0x004c' /tmp/pigeon-scan.log | grep -oE "$ADDR_RE" | sort -u)
 # iOS sets one bit of a 128-bit bitmap per service a backgrounded app advertises: ours is 0x20 in the 10th byte of the value,
-# observed on hardware. Each bluetoothctl line starts with a prompt redrawn after a \r: keep what follows it.
+# observed on hardware. Each bluetoothctl line starts with a coloured prompt, redrawn with \r or ESC[K
+# depending on whether bluetoothd was already running (BusyBox sed can't strip them): drop all of it.
 OVERFLOW=$(awk '
-    { sub(/.*\r/, "") }
+    { gsub(/\033\[[0-9;]*[A-Za-z]|[\r\001\002]/, ""); sub(/^.*\[bluetooth\]# */, "") }
     match($0, /([0-9A-F]{2}:){5}[0-9A-F]{2}/) { addr = substr($0, RSTART, RLENGTH) }
     /ManufacturerData Key:/ { apple = /0x004c/; want = 0; next }
     /ManufacturerData Value:/ { want = apple; next }
