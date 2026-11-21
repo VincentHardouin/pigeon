@@ -62,10 +62,15 @@ send_to() {
     H=$(timeout 10 gatttool -t random -b "$1" --characteristics --uuid=$CHAR 2>&1 | sed -n 's/.*char value handle = \(0x[0-9a-f]*\).*/\1/p')
     [ -n "$H" ] || { echo "pas d'app Pigeon"; return 1; }
     while read -r line; do
-        msg=$(echo "$line" | sed "s/}\$/,\"sent_at\":$(date +%s)}/")
-        out=$(timeout 25 gatttool -t random -b "$1" --char-write-req -a "$H" -n "$(printf %s "$msg" | hexdump -v -e '/1 "%02x"')" 2>&1)
-        echo "$out"
-        echo "$out" | grep -q 'written successfully' || return 1
+        # A write was once refused ("unlikely error") then accepted unchanged on the next sync: retry before giving up.
+        for try in 1 2; do
+            msg=$(echo "$line" | sed "s/}\$/,\"sent_at\":$(date +%s)}/")
+            out=$(timeout 25 gatttool -t random -b "$1" --char-write-req -a "$H" -n "$(printf %s "$msg" | hexdump -v -e '/1 "%02x"')" 2>&1)
+            echo "$out"
+            echo "$out" | grep -q 'written successfully' && break
+            [ $try = 2 ] && return 1
+            sleep 2
+        done
     done < "$OUTBOX"
 }
 
