@@ -32,5 +32,5 @@ Tested on real hardware in November 2026. These results shaped the design; there
 - iOS uses a separate random address per advertising set, so the "Apple" address seen in a scan may not be the app's.
 - In the foreground the app advertises the name `Pigeon`, which `bluetoothctl` shows. In the background iOS drops the name and hides the service UUID in its overflow area (Apple manufacturer data `0x004C`). The sender then tries the last working address, then Apple devices ranked by how often they were seen, and keeps the first one exposing the service.
 - The overflow area is visible to the e-reader: `bluetoothctl` prints it as Apple manufacturer data starting with `01`, followed by a 128-bit bitmap. The Pigeon service sets `0x20` in the 10th byte of that value (observed 21 November 2026, iPhone locked), so the sender targets that bit first.
-- BusyBox `sed` does not understand `\x1b`: `bluetoothctl` output keeps its colour codes and prompt, redrawn after a `\r` on every line.
+- BusyBox `sed` does not understand `\x1b`: `bluetoothctl` output keeps its colour codes and prompt on every line, redrawn with `\r` when `bluetoothd` was already running and with `ESC[K` when the sender has just started it.
 - Pairing brings nothing: without address resolution a bond is never reused.
